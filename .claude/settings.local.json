@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk '/<script>/,/<\\\\/script>/' \"C:/Users/nictuArvind/Downloads/GSM_Sir/urban_kgi_dashboardvansh.html\")",
+      "Bash(python -c \"import app; print\\(''Import OK''\\)\")",
+      "Bash(where python3:*)",
+      "Bash(where python:*)",
+      "Read(//c/Users/nictuArvind/AppData/Local/Programs/Python/**)",
+      "Bash(ls \"C:/Python\"*)",
+      "Bash(\"/c/Users/nictuArvind/AppData/Local/Programs/Python/Python314/python.exe\" -m pip install pandas streamlit)",
+      "Bash(\"/c/Users/nictuArvind/AppData/Local/Programs/Python/Python314/python.exe\" -c \":*)"
+    ]
+  }
+}

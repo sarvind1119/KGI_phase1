@@ -1,0 +1,10 @@
+# Virtual environments
+venv/
+.venv/
+
+# Data files
+*.csv
+
+# Python cache
+__pycache__/
+*.py[cod]

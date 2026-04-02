@@ -1,0 +1,6 @@
+[server]
+port = 8503
+enableCORS = false
+
+# Optional: use this project config when running streamlit from the repo root.
+# Run with: streamlit run app.py
