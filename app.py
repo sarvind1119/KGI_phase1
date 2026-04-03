@@ -155,10 +155,7 @@ def run_dashboard_generation(
         count = len(data)
         insight = generate_insight(data, unit)
         nkpi_raw = (national_kpi_values or {}).get(col)
-        try:
-            nkpi = float(nkpi_raw) if nkpi_raw is not None else None
-        except (ValueError, TypeError):
-            nkpi = None
+        nkpi = str(nkpi_raw).strip() if nkpi_raw is not None else None
         kgis.append({
             "code": col,
             "label": col,
@@ -423,7 +420,7 @@ with tab1:
         # Deduplicate — keep first
         df_deduped = df.drop_duplicates(subset=["Cadre", "KGI"], keep="first").copy()
         if n_dupes > 0:
-            st.caption(f"Found {n_dupes} duplicate (Cadre + KGI) rows; keeping first occurrence.")
+            st.caption(f"Found {n_dupes} duplicate (Cadre + KGI) rows; values will be combined (comma-separated) in the wide format.")
 
         # Sector selection (if Sector column exists)
         if needs_sector:
@@ -450,13 +447,20 @@ with tab1:
         )
 
         if selected_kgis:
-            # Filter and pivot
-            df_filtered = df_ministry[df_ministry["KGI"].isin(selected_kgis)].copy()
-            df_wide = df_filtered.pivot_table(
+            # Source pivot from full (pre-dedup) dataset so all duplicate rows are summed
+            if needs_sector:
+                df_pivot_src = df[df["Sector"] == selected_sector]
+            else:
+                df_pivot_src = df
+            df_pivot_src = df_pivot_src[
+                (df_pivot_src["Ministry/Department"] == selected_ministry)
+                & (df_pivot_src["KGI"].isin(selected_kgis))
+            ].copy()
+            df_wide = df_pivot_src.pivot_table(
                 index="Cadre",
                 columns="KGI",
                 values="Estimated figure",
-                aggfunc="first",
+                aggfunc=lambda x: ", ".join(x.dropna().astype(str)),
             ).reset_index()
 
             # Reorder columns: Cadre first, then KGIs in selection order
@@ -467,9 +471,15 @@ with tab1:
             national_kpi_map = {}
             if "National KPI" in raw_df.columns:
                 for kgi_name in selected_kgis:
-                    subset = raw_df[raw_df["KGI"] == kgi_name]["National KPI"].dropna()
+                    nkpi_mask = (
+                        (raw_df["KGI"] == kgi_name)
+                        & (raw_df["Ministry/Department"] == selected_ministry)
+                    )
+                    if needs_sector:
+                        nkpi_mask &= raw_df["Sector"] == selected_sector
+                    subset = raw_df[nkpi_mask]["National KPI"].dropna()
                     if not subset.empty:
-                        national_kpi_map[kgi_name] = subset.iloc[0]
+                        national_kpi_map[kgi_name] = ", ".join(subset.astype(str).unique())
             if national_kpi_map:
                 nkpi_row = {"Cadre": "National KPI"}
                 nkpi_row.update({k: v for k, v in national_kpi_map.items() if k in df_wide.columns})
@@ -479,6 +489,15 @@ with tab1:
                 st.session_state.user_name,
                 selected_ministry,
             )
+
+            # National KPI cards
+            if national_kpi_map:
+                st.markdown("**National KPI Benchmarks**")
+                card_cols = st.columns(len(national_kpi_map))
+                for idx, (kgi_name, value) in enumerate(national_kpi_map.items()):
+                    with card_cols[idx]:
+                        st.caption(kgi_name)
+                        st.metric(label="National KPI", value=value)
 
             # Preview
             st.subheader("Wide-format preview")

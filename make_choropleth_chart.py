@@ -276,7 +276,7 @@ def build_html(
         data_js = json.dumps(kgi["data"], separators=(',', ':'))
         insight = kgi.get("insight", "Hover a state to see the value")
         nkpi_val = kgi.get("national_kpi")
-        nkpi_js = "null" if nkpi_val is None else repr(float(nkpi_val))
+        nkpi_js = "null" if nkpi_val is None else json.dumps(str(nkpi_val))
         kgi_js_list.append(
             f'{{"code":{json.dumps(kgi["code"])},"label":{json.dumps(kgi["label"])},'
             f'"unit":{json.dumps(kgi["unit"])},"color":{json.dumps(accent)},'
@@ -555,16 +555,14 @@ function buildDash() {{
       '<div class="ptop">' +
         '<div class="pinfo">' +
           '<div class="ptitle">' + kgi.label + '</div>' +
-          '<div class="pcode">' + kgi.code + '</div>' +
-          '<div class="punit">Unit: ' + kgi.unit + '</div>' +
+          (kgi.national_kpi != null
+            ? '<div class="punit" style="font-size:12px;font-weight:600;color:var(--tx)">National KPI: ' + kgi.national_kpi + '</div>'
+            : '<div class="punit">Unit: ' + kgi.unit + '</div>') +
         '</div>' +
         '<div class="pbadge" style="background:' + kgi.badge_bg + ';color:' + kgi.badge_c + '">' +
           vals.length + ' states</div>' +
       '</div>' +
       '<div class="ins" style="border-color:' + kgi.color + '">' + kgi.insight + '</div>' +
-      (kgi.national_kpi != null
-        ? '<div class="nkpi" style="border-color:' + kgi.color + '">\U0001F3AF National KPI: <b>' + fmt(kgi.national_kpi, kgi.unit) + ' ' + kgi.unit + '</b></div>'
-        : '') +
       '<div class="mc" id="mc' + idx + '"></div>' +
       '<div class="leg">' +
         '<div class="leg-l">Low</div>' +
